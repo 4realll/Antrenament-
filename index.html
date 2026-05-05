@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Program Antrenament</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--border:#272c3d;
+    --accent:#c8f04d;--accent2:#4df0b4;--accent3:#f04d7a;
+    --text:#e8eaf0;--muted:#5a6080;--warm:#f0c44d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;padding:0 0 80px;overflow-x:hidden;}
+  .header{padding:28px 20px 14px;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-40px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(200,240,77,0.1) 0%,transparent 70%);pointer-events:none;}
+  .header-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+  .header-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1.1;}
+  .header-sub{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:1px;}
+  .session-toggle{display:flex;gap:8px;margin:14px 20px 0;}
+  .sess-btn{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all 0.2s;letter-spacing:1px;text-transform:uppercase;}
+  .sess-btn.active{background:rgba(200,240,77,0.1);border-color:var(--accent);color:var(--accent);}
+  .sess-btn.active.evening{background:rgba(77,240,180,0.1);border-color:var(--accent2);color:var(--accent2);}
+  .week-bar{margin:12px 20px 0;background:var(--surface2);border-radius:4px;height:3px;overflow:hidden;}
+  .week-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width 0.6s ease;}
+  .week-stats{display:flex;justify-content:space-between;margin:5px 20px 0;font-size:10px;color:var(--muted);letter-spacing:1px;}
+  .week-stats .hi{color:var(--accent);}
+  .day-nav{display:flex;gap:6px;padding:12px 20px 0;overflow-x:auto;scrollbar-width:none;}
+  .day-nav::-webkit-scrollbar{display:none;}
+  .day-pill{flex-shrink:0;padding:7px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .day-pill .pill-abbr{font-weight:500;letter-spacing:1px;}
+  .day-pill .pill-dot{width:4px;height:4px;border-radius:50%;background:var(--border);transition:background 0.2s;}
+  .day-pill.done .pill-dot{background:var(--accent);}
+  .day-pill.active{border-color:var(--accent);background:rgba(200,240,77,0.08);color:var(--accent);}
+  .day-pill:hover:not(.active){border-color:var(--muted);color:var(--text);}
+  .day-card{margin:14px 20px 0;background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;animation:slideUp 0.3s ease;}
+  @keyframes slideUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .day-card-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+  .day-card-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;}
+  .day-card-meta{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:1px;text-transform:uppercase;}
+  .day-focus{font-size:10px;color:var(--accent2);margin-top:3px;font-style:italic;}
+  .day-tag{padding:4px 9px;border-radius:20px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-weight:600;flex-shrink:0;margin-left:8px;}
+  .tag-push{background:rgba(200,240,77,0.1);color:var(--accent);border:1px solid rgba(200,240,77,0.25);}
+  .tag-pull{background:rgba(77,240,180,0.1);color:var(--accent2);border:1px solid rgba(77,240,180,0.25);}
+  .tag-lower{background:rgba(240,196,77,0.1);color:var(--warm);border:1px solid rgba(240,196,77,0.25);}
+  .tag-cardio{background:rgba(240,77,122,0.1);color:var(--accent3);border:1px solid rgba(240,77,122,0.25);}
+  .tag-full{background:rgba(150,120,255,0.1);color:#b4a0ff;border:1px solid rgba(150,120,255,0.25);}
+  .tag-recovery{background:rgba(90,96,128,0.15);color:var(--muted);border:1px solid rgba(90,96,128,0.3);}
+  .section{border-bottom:1px solid var(--border);}
+  .section:last-child{border-bottom:none;}
+  .section-header{padding:11px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background 0.15s;}
+  .section-header:hover{background:var(--surface2);}
+  .section-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:500;}
+  .section-count{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .progress-mini{width:28px;height:2px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .progress-mini-fill{height:100%;background:var(--accent);transition:width 0.3s;}
+  .chevron{font-size:10px;color:var(--muted);transition:transform 0.2s;margin-left:6px;}
+  .section.collapsed .chevron{transform:rotate(-90deg);}
+  .section-body{padding:0 20px 10px;}
+  .section.collapsed .section-body{display:none;}
+  .snote{font-size:10px;padding:6px 10px;border-radius:6px;margin-bottom:6px;border-left:2px solid var(--border);line-height:1.5;font-style:italic;}
+  .snote-warn{background:rgba(240,196,77,0.06);border-color:var(--warm);color:var(--warm);}
+  .snote-ok{background:rgba(200,240,77,0.05);border-color:var(--accent);color:var(--accent);}
+  .snote-info{background:rgba(77,240,180,0.05);border-color:var(--accent2);color:var(--accent2);}
+  .exercise{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(39,44,61,0.5);}
+  .exercise:last-child{border-bottom:none;}
+  .ex-check-wrap{flex-shrink:0;cursor:pointer;margin-top:1px;}
+  .ex-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+  .exercise.done .ex-check{background:var(--accent);border-color:var(--accent);}
+  .exercise.done .ex-check::after{content:'✓';font-size:11px;color:#0d0f14;font-weight:700;}
+  .exercise.done .ex-name{color:var(--muted);text-decoration:line-through;}
+  .ex-info{flex:1;cursor:pointer;min-width:0;}
+  .ex-name{font-size:13px;color:var(--text);font-weight:500;font-family:'Syne',sans-serif;transition:color 0.2s;line-height:1.3;}
+  .ex-sets{font-size:11px;color:var(--muted);margin-top:1px;}
+  .ex-note{font-size:10px;color:var(--accent2);margin-top:2px;font-style:italic;line-height:1.3;}
+  .ex-rehab{font-size:9px;color:var(--accent3);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+  .exercise.prio .ex-name::before{content:'★ ';color:var(--warm);font-size:11px;}
+  .exercise.prio{background:rgba(240,196,77,0.05);border-radius:8px;padding-left:6px;margin-left:-6px;border-bottom-color:rgba(240,196,77,0.15)!important;}
+  .timer-btn{flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all 0.2s;}
+  .timer-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,240,77,0.08);}
+  .timer-btn:active{transform:scale(0.92);}
+  .complete-btn{margin:14px 20px;width:calc(100% - 40px);padding:13px;border-radius:12px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+  .complete-btn.default{background:var(--accent);color:#0d0f14;}
+  .complete-btn.completed{background:var(--surface2);color:var(--accent);border:1px solid var(--accent);}
+  .notes-area{margin:0 20px 16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);width:calc(100% - 40px);resize:vertical;min-height:55px;outline:none;transition:border-color 0.2s;}
+  .notes-area:focus{border-color:var(--muted);}
+  .notes-area::placeholder{color:var(--muted);}
+  .timer-overlay{position:fixed;inset:0;background:rgba(13,15,20,0.97);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn 0.2s ease;backdrop-filter:blur(8px);}
+  .timer-overlay.hidden{display:none;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .timer-ex-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:28px;text-align:center;padding:0 28px;max-width:320px;line-height:1.5;}
+  .timer-ring-wrap{position:relative;width:200px;height:200px;margin-bottom:24px;}
+  .timer-svg{transform:rotate(-90deg);width:200px;height:200px;}
+  .timer-track{fill:none;stroke:var(--surface2);stroke-width:8;}
+  .timer-arc{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 0.3s linear,stroke 0.4s;}
+  .timer-arc.warning{stroke:var(--warm);}
+  .timer-arc.danger{stroke:var(--accent3);}
+  .timer-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+  .timer-count{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;color:var(--text);line-height:1;letter-spacing:-1px;transition:color 0.3s;}
+  .timer-count.warning{color:var(--warm);}
+  .timer-count.danger{color:var(--accent3);}
+  .timer-label{font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;text-transform:uppercase;}
+  .timer-controls{display:flex;gap:10px;margin-bottom:14px;}
+  .t-btn{padding:13px 22px;border-radius:12px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all 0.18s;}
+  .t-btn-main{background:var(--accent);color:#0d0f14;min-width:120px;}
+  .t-btn-close{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  .timer-adjust{display:flex;gap:8px;align-items:center;}
+  .t-adj{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;}
+  .t-adj-label{font-size:11px;color:var(--muted);letter-spacing:1px;min-width:60px;text-align:center;}
+  @keyframes doneFlash{0%{background:rgba(13,15,20,0.97);}30%{background:rgba(200,240,77,0.13);}100%{background:rgba(13,15,20,0.97);}}
+  .timer-overlay.done-flash{animation:doneFlash 0.8s ease forwards;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-label">Program Personalizat · 12–16 Săptămâni</div>
+  <div class="header-title">Hipertrofie<br>+ Rehab</div>
+  <div class="header-sub">DIMINEAȚA SALĂ · SEARA ACASĂ · 6 ZILE / SĂPTĂMÂNĂ</div>
+  <div style="font-size:10px;color:var(--warm);margin-top:6px;">★ = prioritar când timpul e limitat</div>
+</div>
+<div class="session-toggle">
+  <button class="sess-btn active" id="btnMorning" onclick="setSession('morning')">☀ Dimineața – Sală</button>
+  <button class="sess-btn evening" id="btnEvening" onclick="setSession('evening')">🌙 Seara – Acasă</button>
+</div>
+<div class="week-bar"><div class="week-bar-fill" id="weekFill" style="width:0%"></div></div>
+<div class="week-stats">
+  <span id="weekStatLeft">0 / 6 zile completate</span>
+  <span class="hi" id="weekStatRight">0%</span>
+</div>
+<div class="day-nav" id="dayNav"></div>
+<div id="dayContent"></div>
+<div class="timer-overlay hidden" id="timerOverlay">
+  <div class="timer-ex-name" id="timerExName">–</div>
+  <div class="timer-ring-wrap">
+    <svg class="timer-svg" viewBox="0 0 200 200">
+      <circle class="timer-track" cx="100" cy="100" r="86"/>
+      <circle class="timer-arc" id="timerArc" cx="100" cy="100" r="86"/>
+    </svg>
+    <div class="timer-center">
+      <div class="timer-count" id="timerCount">30</div>
+      <div class="timer-label" id="timerSubLabel">SECUNDE</div>
+    </div>
+  </div>
+  <div class="timer-controls">
+    <button class="t-btn t-btn-close" onclick="closeTimer()">✕</button>
+    <button class="t-btn t-btn-main" id="timerMainBtn" onclick="toggleTimer()">▶ Start</button>
+  </div>
+  <div class="timer-adjust">
+    <div class="t-adj" onclick="adjustTimer(-1)">−</div>
+    <div class="t-adj-label" id="adjLabel">30 sec</div>
+    <div class="t-adj" onclick="adjustTimer(1)">+</div>
+  </div>
+</div>
+<script>
+const DAYS=[
+{id:'lun',label:'LUN',title:'Push — Piept & Umeri',meta:'Luni',tag:'tag-push',tagLabel:'Push',focus:'Hipertrofie upper body anterior · Rehab umăr drept AC Gr.II',
+morning:[
+{name:'Warm-Up',note:null,items:[
+{n:'Bike staționar',s:'8 min — Zone 1',t:480,note:null,rehab:null,prio:true},
+{n:'Band Pull Aparts',s:'3×20',t:null,note:'Activează rotatori externi, protejează umărul drept',rehab:null,prio:true},
+{n:'Band External Rotation (cotul la 90°)',s:'3×15 / parte',t:null,note:'Izometric ușor — nu forța pe dreapta',rehab:'rehab umăr',prio:true},
+{n:'Shoulder CARs',s:'2×5 rotații / parte — lent',t:null,note:'Rotații controlate, fără durere',rehab:null,prio:false},
+{n:'Thoracic Rotations',s:'2×10 / parte',t:null,note:'Deblochează toracala înainte de press',rehab:null,prio:false},
+{n:'Cat/Cow',s:'2×10 respirații',t:null,note:'Mobilizare cervicală și lombară',rehab:null,prio:false},
+]},
+{name:'Strength — Piept',note:'Evită mișcările cu brațul drept deasupra capului sub sarcină mare.',noteType:'warn',items:[
+{n:'Incline DB Press (45°)',s:'4×10–12 · RPE 7–8',t:null,note:'Coatele la 60° față de trunchi. Scade greutatea pe dreapta dacă simți umărul',rehab:null,prio:true},
+{n:'Machine Chest Press',s:'4×12–15 · RPE 7',t:null,note:'Mașina e preferată față de bară — control mai bun',rehab:null,prio:false},
+{n:'Cable Fly (jos spre sus)',s:'3×15 · RPE 6–7',t:null,note:'Amplitudine completă, stretch controlat',rehab:null,prio:false},
+]},
+{name:'Strength — Umeri',note:'Pe umărul drept: evită press strict overhead.',noteType:'warn',items:[
+{n:'Seated DB Press (80°, nu vertical)',s:'4×10–12 · RPE 7',t:null,note:'Spatele la 80° — reduce compresia AC dreaptă',rehab:null,prio:true},
+{n:'Lateral Raises (cable sau DB)',s:'4×15–20',t:null,note:'Max 90° amplitudine — nu ridica mai sus',rehab:null,prio:true},
+{n:'Rear Delt Cable Fly',s:'4×15 · RPE 6',t:null,note:'Echilibru deltoid și sănătate AC',rehab:null,prio:false},
+]},
+{name:'Triceps',note:null,items:[
+{n:'Triceps Pushdown (V-bar)',s:'3×12–15',t:null,note:null,rehab:null,prio:true},
+{n:'Overhead Triceps Extension (un braț)',s:'3×12 / parte',t:null,note:'Pe dreapta: ROM redus dacă simți umărul',rehab:'atenție dreapta',prio:false},
+]},
+{name:'Rehab Umăr Drept',note:'Obligatoriu după fiecare Push. 5–7 min.',noteType:'ok',items:[
+{n:'Face Pull',s:'3×20 · greutate mică',t:null,note:'Retracție scapulară + rotație externă. Cel mai important pentru AC',rehab:'rehab',prio:true},
+{n:'Band External Rotation (lângă corp)',s:'3×15 / parte',t:null,note:'Izometric controlat pe dreapta',rehab:'rehab',prio:true},
+{n:'Sleeper Stretch (dreapta)',s:'2×30 sec',t:30,note:'Culcat pe umărul drept, rotație internă ușoară',rehab:'rehab',prio:true},
+{n:'Cross-Body Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:'rehab',prio:false},
+]},
+{name:'Stretching Post',note:'10 min — nu sări.',noteType:'ok',items:[
+{n:'Pec Door Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:null,prio:false},
+{n:'Overhead Triceps Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:null,prio:false},
+{n:'Neck Side Flexion Stretch',s:'2×30 sec / parte',t:30,note:'Cervicala — lent, fără tracțiune',rehab:null,prio:true},
+{n:"Child's Pose",s:'2×45 sec',t:45,note:'Decompresie lombară',rehab:null,prio:true},
+]},
+],
+evening:[
+{name:'Decompresie Coloană',note:'10–15 min. Cervicală și lombară comprimate după birou.',noteType:'info',items:[
+{n:'Knees to Chest',s:'2 min — respirat profund',t:120,note:'Decompresie L5/S1 și sacro-iliac',rehab:'coloană',prio:true},
+{n:'Cat/Cow lent',s:'2×10 — 4 sec fiecare',t:null,note:'Sincronizat cu respirația',rehab:null,prio:true},
+{n:'Thread the Needle',s:'3×30 sec / parte',t:30,note:'Rotație toracală — C5/C6',rehab:null,prio:true},
+{n:"Child's Pose cu extensie laterală",s:'2×45 sec / parte',t:45,note:'Stretch quadratus lumborum',rehab:null,prio:false},
+{n:'Supine Twist',s:'2×45 sec / parte',t:45,note:'Decompresie sacro-iliac bilateral',rehab:'sacro-iliac',prio:true},
+]},
+{name:'Mobilitate Șolduri + Genunchi',note:'Flexori șold scurtați + genunchi rigizi după birou.',noteType:'info',items:[
+{n:'Hip Flexor Stretch (low lunge)',s:'3×40 sec / parte',t:40,note:'Flexorii sunt scurtați maxim după stat jos',rehab:'șolduri',prio:true},
+{n:'Piriformis Stretch (figura 4)',s:'2×40 sec / parte',t:40,note:'Ameliorează tensiunea sacro-iliacă',rehab:'sacro-iliac',prio:true},
+{n:'Seated Hamstring Stretch',s:'2×40 sec / parte',t:40,note:'Hamstringii scurți tensionează L4/L5',rehab:'coloană',prio:false},
+{n:'Quad Stretch',s:'2×30 sec / parte',t:30,note:'Reduce tensiunea pe menisc și patelă',rehab:'genunchi',prio:false},
+{n:'Calf Stretch',s:'2×30 sec / parte',t:30,note:'Ameliorează biomecanica genunchiului',rehab:'genunchi',prio:false},
+]},
+{name:'Relaxare Finală',note:null,items:[
+{n:'Legs Up the Wall',s:'3–5 min',t:300,note:'Drenaj venos, relaxare SNC',rehab:null,prio:true},
+{n:'Respirație diafragmatică 4-4-4-4',s:'2 min',t:120,note:'Sistem parasimpatic — somn mai bun',rehab:null,prio:false},
+]},
+],
+},
+{id:'mar',label:'MAR',title:'Lower A — Posterior Chain',meta:'Marți',tag:'tag-lower',tagLabel:'Lower A',focus:'Hamstring + Glute hipertrofie · Rehab menisc bilateral Gr.III',
+morning:[
+{name:'Warm-Up Genunchi',note:'CRITIC: menisc Gr.III bilateral. Warm-up dedicat înainte orice sarcină.',noteType:'warn',items:[
+{n:'Bike staționar',s:'10 min — Zone 1',t:600,note:'Lubrifiază articulația. Nu ridica rezistența',rehab:null,prio:true},
+{n:'TKE Band',s:'3×20 / parte',t:null,note:'Activează VMO fără compresie meniscală. Esențial',rehab:'genunchi',prio:true},
+{n:'Glute Bridge bilateral',s:'2×15 — 2 sec hold',t:null,note:'Activare fesieri',rehab:null,prio:false},
+{n:'Clamshell cu bandă',s:'2×15 / parte',t:null,note:'Activare abductori — stabilizare genunchi',rehab:'genunchi',prio:false},
+{n:'Quadruped Hip Extension',s:'2×12 / parte',t:null,note:'Activare glute fără sarcină pe genunchi',rehab:null,prio:false},
+]},
+{name:'Strength — Posterior Chain',note:'Zero flexie profundă genunchi sub sarcină. Hip hinge și izometrie.',noteType:'warn',items:[
+{n:'Romanian Deadlift',s:'4×10–12 · RPE 7–8',t:null,note:'Cel mai bun pentru tine: glute + hamstring fără stres meniscal. Neutru lombar',rehab:null,prio:true},
+{n:'Hamstring Curl (mașină culcat)',s:'4×12–15',t:null,note:'ROM complet. Nu forța flexia maximă dacă doare meniscul',rehab:'genunchi',prio:true},
+{n:'Hip Thrust',s:'4×10–12 · RPE 8',t:null,note:'Cel mai bun glute pentru tine. Fără stres genunchi',rehab:null,prio:true},
+{n:'Good Morning (ușor)',s:'3×12',t:null,note:'Menține spatele neutru. Oprește la tensiune lombară',rehab:null,prio:false},
+]},
+{name:'Knee Stability — Rehab',note:'VMO, stabilizatori mediali, propriocepție.',noteType:'ok',items:[
+{n:'Spanish Squat Hold',s:'3×30 sec',t:30,note:'Izometric cvadriceps fără compresie meniscală',rehab:'genunchi',prio:true},
+{n:'Step Down Control',s:'3×10 / parte — 5 sec coborâre',t:null,note:'Cel mai bun test de control genunchi',rehab:'genunchi',prio:true},
+{n:'Wall Sit (60°, nu 90°)',s:'3×20 sec',t:20,note:'Nu coborî la 90° — reduce compresia pe menisc',rehab:'genunchi',prio:false},
+{n:'Single Leg Balance',s:'3×30 sec / parte',t:30,note:'Cu ochii închiși din săptămâna 3',rehab:'genunchi',prio:false},
+{n:'Lateral Band Walks',s:'3×15 / parte',t:null,note:'Bandă la genunchi — activare abductori',rehab:'genunchi',prio:false},
+]},
+{name:'Stretching Post',note:null,items:[
+{n:'Hamstring Flossing',s:'2×15 / parte',t:null,note:'Extensie lentă',rehab:null,prio:false},
+{n:'Hip Flexor Stretch',s:'2×40 sec / parte',t:40,note:null,rehab:null,prio:true},
+{n:'Piriformis Stretch',s:'2×40 sec / parte',t:40,note:'Sacro-iliac bilateral',rehab:'sacro-iliac',prio:true},
+{n:'Calf Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:null,prio:false},
+{n:'Supine Lumbar Decompression',s:'3 min',t:180,note:'Obligatoriu după lower. L5/S1',rehab:'coloană',prio:true},
+]},
+],
+evening:[
+{name:'Decompresie Coloană',note:'Lombară comprimată + sacro-iliac tensionat.',noteType:'info',items:[
+{n:'Knees to Chest Rocks',s:'2 min',t:120,note:'Masaj sacro-iliac',rehab:'sacro-iliac',prio:true},
+{n:'Cat/Cow',s:'2×10',t:null,note:null,rehab:null,prio:true},
+{n:'Pelvic Tilts',s:'2×15 — lent',t:null,note:'Stabilizatori lombari',rehab:'coloană',prio:false},
+{n:'McGill Curl-Up',s:'2×8 / parte — lent',t:null,note:'Nu e crunch — fără flexie lombară',rehab:'coloană',prio:false},
+]},
+{name:'Recuperare Genunchi',note:'Decompresie activă după Lower.',noteType:'info',items:[
+{n:'Prone Heel Holds',s:'2×30 sec / parte',t:30,note:'Extensie pasivă genunchi. Reduce efuziunea',rehab:'genunchi',prio:true},
+{n:'Seated Quad Sets (izometric)',s:'2×10 × 10 sec',t:10,note:'Cvadriceps fără mișcare — reduce umflarea',rehab:'genunchi',prio:false},
+{n:'Legs Up the Wall',s:'5 min',t:300,note:'Drenaj + relaxare',rehab:'genunchi',prio:true},
+]},
+{name:'Șolduri + Relaxare',note:null,items:[
+{n:'Couch Stretch',s:'2×40 sec / parte',t:40,note:'Flexor șold + quad scurtat după birou',rehab:'șolduri',prio:true},
+{n:'Butterfly Stretch',s:'2×40 sec',t:40,note:'Adductori + pelvis bilateral',rehab:'bazin',prio:false},
+{n:'Respirație diafragmatică',s:'2 min',t:120,note:null,rehab:null,prio:false},
+]},
+],
+},
+{id:'mie',label:'MIE',title:'Pull — Spate & Biceps',meta:'Miercuri',tag:'tag-pull',tagLabel:'Pull',focus:'Hipertrofie spate · Decompresie cervicală + lombară',
+morning:[
+{name:'Warm-Up',note:null,items:[
+{n:'Bike staționar',s:'8 min — Zone 1',t:480,note:null,rehab:null,prio:true},
+{n:'Band Pull Aparts',s:'3×20',t:null,note:'Activare mid-trapez și rotatori externi',rehab:null,prio:true},
+{n:'Scapular Pushups',s:'2×10',t:null,note:'Mobilizare scapulară',rehab:null,prio:false},
+{n:'Dead Hang (bară)',s:'2×20 sec',t:20,note:'Decompresie cervicală și lombară',rehab:'coloană',prio:true},
+{n:'Thoracic Extensions (foam roller)',s:'2×10',t:null,note:'Mobilizare toracală',rehab:null,prio:false},
+]},
+{name:'Strength — Spate',note:'Zero shrugs cu greutate mare — compresie cervicală.',noteType:'ok',items:[
+{n:'Lat Pulldown (priză largă)',s:'4×10–12 · RPE 7–8',t:null,note:'Trage spre bărbie. Evită hiperlordoza cervicală',rehab:null,prio:true},
+{n:'Chest Supported Row',s:'4×10–12 · RPE 8',t:null,note:'Elimină sarcina lombară. Retracție scapulară completă',rehab:null,prio:true},
+{n:'Single Arm DB Row',s:'3×12 / parte',t:null,note:'Suport la bancă — nu rotunjii coloana',rehab:null,prio:false},
+{n:'Seated Cable Row (V-bar)',s:'3×12–15',t:null,note:'Retracție finală 1 sec',rehab:null,prio:true},
+{n:'Straight Arm Pulldown',s:'3×15',t:null,note:'Izolat lat. Controlat',rehab:null,prio:false},
+]},
+{name:'Biceps',note:null,items:[
+{n:'Incline DB Curl',s:'3×12 — stretch complet',t:null,note:'Stretch maxim la bas — biceps lung',rehab:null,prio:true},
+{n:'Cable Curl',s:'3×15',t:null,note:'Constant tension — hipertrofie',rehab:null,prio:false},
+{n:'Hammer Curl',s:'3×12',t:null,note:'Brachialis + brachioradialis',rehab:null,prio:false},
+]},
+{name:'Rehab Coloană',note:'Hernii active C5-C7, L1/2, L4/5, L5/S1 — nu opțional.',noteType:'ok',items:[
+{n:'Bird Dog',s:'3×10 / parte — 3 sec hold',t:3,note:'Stabilizare neutră lombară. Baza rehabului',rehab:'coloană',prio:true},
+{n:'McGill Curl-Up',s:'3×8 / parte',t:null,note:'Transvers abdominal fără flexie lombară',rehab:'coloană',prio:true},
+{n:'Dead Bug',s:'3×8 / parte — lent',t:null,note:'Coordonare contra-laterală',rehab:'coloană',prio:false},
+{n:'Pallof Press (cablu)',s:'3×12 / parte',t:null,note:'Anti-rotație. Core fără compresie discală',rehab:'coloană',prio:false},
+]},
+{name:'Stretching Post',note:null,items:[
+{n:'Lat Stretch',s:'2×40 sec / parte',t:40,note:'Decompresie laterală coloană',rehab:null,prio:false},
+{n:'Neck Side Flexion + Rotație',s:'2×30 sec / parte',t:30,note:'C5-C7 — extrem de lent, fără tracțiune',rehab:'cervicală',prio:true},
+{n:'Thoracic Rotation',s:'2×10 / parte',t:null,note:null,rehab:null,prio:false},
+{n:"Child's Pose",s:'2×45 sec',t:45,note:null,rehab:null,prio:true},
+]},
+],
+evening:[
+{name:'Decompresie Cervicală + Toracală',note:'PRIORITATE: cervicala tensionată după Pull.',noteType:'warn',items:[
+{n:'Cervical Traction',s:'3×30 sec',t:30,note:'Culcat. Mâna sub ceafă, capul cade ușor înapoi',rehab:'cervicală',prio:true},
+{n:'Thread the Needle',s:'3×30 sec / parte',t:30,note:'Rotație toracală — C5-T2',rehab:null,prio:true},
+{n:'Chin Tucks',s:'3×10 — 5 sec hold',t:5,note:'Retracție cervicală. Contra "cap înainte" de la birou',rehab:'cervicală',prio:true},
+{n:'Shoulder Blade Squeeze',s:'3×10 — 5 sec hold',t:5,note:'Activare mid-trapez',rehab:null,prio:false},
+]},
+{name:'Decompresie Lombară',note:null,items:[
+{n:'Supine Knees to Chest',s:'2 min',t:120,note:'L5/S1',rehab:'coloană',prio:true},
+{n:'Supine Twist',s:'2×45 sec / parte',t:45,note:'Sacro-iliac + lombară',rehab:'sacro-iliac',prio:true},
+{n:'Hip Flexor Stretch',s:'2×40 sec / parte',t:40,note:null,rehab:null,prio:true},
+{n:'Legs Up the Wall',s:'4 min',t:240,note:'Relaxare SNC + drenaj',rehab:null,prio:false},
+]},
+],
+},
+{id:'joi',label:'JOI',title:'Lower B — Quad Focus',meta:'Joi',tag:'tag-lower',tagLabel:'Lower B',focus:'Cvadriceps + Fesieri · Continuare rehab genunchi bilateral',
+morning:[
+{name:'Warm-Up Genunchi',note:'Identic Marți — obligatoriu.',noteType:'warn',items:[
+{n:'Bike staționar',s:'10 min — Zone 1',t:600,note:null,rehab:null,prio:true},
+{n:'TKE Band',s:'3×20 / parte',t:null,note:'VMO — obligatoriu',rehab:'genunchi',prio:true},
+{n:'Glute Bridge',s:'2×15',t:null,note:null,rehab:null,prio:false},
+{n:'BW Squat (ROM 60°)',s:'2×10 — lent',t:null,note:'Warm-up articular. Nu sub paralel',rehab:'genunchi',prio:false},
+{n:'Hip Circles',s:'2×10 / parte',t:null,note:'Mobilizare coxofemurală',rehab:'bazin',prio:false},
+]},
+{name:'Strength — Quad / Glute',note:'Flexia genunchiului max 90°. Zero genuflexiuni libere profunde.',noteType:'warn',items:[
+{n:'Leg Press (ROM 0–70°)',s:'4×12–15',t:null,note:'Tălpile la mijloc. NU sub paralel — menisc',rehab:'genunchi',prio:true},
+{n:'Bulgarian Split Squat Assisted',s:'3×10 / parte',t:null,note:'Asistă cu brațul. Genunchi față max 70°',rehab:'genunchi',prio:false},
+{n:'Reverse Lunge',s:'3×10 / parte',t:null,note:'Mai sigur decât lunge înainte pentru menisc',rehab:'genunchi',prio:true},
+{n:'Glute Bridge Single Leg',s:'3×12 / parte',t:null,note:'Progresie Hip Thrust unilateral',rehab:null,prio:false},
+{n:'Standing Calf Raise',s:'4×15 — 2 sec hold',t:null,note:null,rehab:null,prio:false},
+]},
+{name:'Knee Stability — Rehab',note:null,noteType:'ok',items:[
+{n:'Spanish Squat Hold',s:'3×35 sec',t:35,note:'Progresie față de Marți',rehab:'genunchi',prio:true},
+{n:'TKE Band',s:'3×20 / parte',t:null,note:null,rehab:'genunchi',prio:true},
+{n:'Step Down Control',s:'3×10 — 6 sec coborâre',t:null,note:'Progresie față de Marți',rehab:'genunchi',prio:false},
+{n:'Single Leg Balance + oscilare brațe',s:'3×30 sec / parte',t:30,note:null,rehab:'genunchi',prio:false},
+]},
+{name:'Stretching Post',note:null,items:[
+{n:'Quad Stretch (culcat pe burtă)',s:'2×40 sec / parte',t:40,note:'Reduce tensiunea pe patelă și menisc',rehab:'genunchi',prio:true},
+{n:'Pigeon Pose (modificat)',s:'2×40 sec / parte',t:40,note:'Nu forța dacă doare SI',rehab:'șolduri',prio:false},
+{n:'Hamstring Stretch',s:'2×40 sec / parte',t:40,note:null,rehab:null,prio:false},
+{n:'Supine Lumbar Decompression',s:'3 min',t:180,note:null,rehab:'coloană',prio:true},
+]},
+],
+evening:[
+{name:'Decompresie Lombară + Bazin',note:'Joi seara — bazin și lombară au cea mai mare nevoie.',noteType:'info',items:[
+{n:'Pelvic Tilts',s:'3×15',t:null,note:null,rehab:null,prio:false},
+{n:'Knees to Chest',s:'2 min',t:120,note:null,rehab:'coloană',prio:true},
+{n:'Supine Twist',s:'2×45 sec / parte',t:45,note:'Sacro-iliac bilateral',rehab:'sacro-iliac',prio:true},
+{n:'Cat/Cow',s:'2×10',t:null,note:null,rehab:null,prio:false},
+]},
+{name:'Mobilitate Genunchi + Șolduri',note:null,items:[
+{n:'Prone Heel Holds',s:'2×40 sec / parte',t:40,note:'Extensie pasivă genunchi',rehab:'genunchi',prio:true},
+{n:'Hip Flexor Stretch (Couch)',s:'2×45 sec / parte',t:45,note:null,rehab:null,prio:true},
+{n:'Figure 4 Stretch',s:'2×40 sec / parte',t:40,note:'Piriformis + sacro-iliac',rehab:'sacro-iliac',prio:true},
+{n:'Calf Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:null,prio:false},
+{n:'Legs Up the Wall',s:'5 min',t:300,note:null,rehab:null,prio:true},
+]},
+],
+},
+{id:'vin',label:'VIN',title:'Upper Full — Umeri & Arms',meta:'Vineri',tag:'tag-full',tagLabel:'Upper Full',focus:'Deltoid 360° + Brațe + Rehab umăr drept',
+morning:[
+{name:'Warm-Up',note:null,items:[
+{n:'Bike staționar',s:'8 min',t:480,note:null,rehab:null,prio:true},
+{n:'Band Pull Aparts',s:'3×20',t:null,note:null,rehab:null,prio:true},
+{n:'Band External Rotation',s:'3×15 / parte',t:null,note:null,rehab:'umăr',prio:true},
+{n:'Arm Circles',s:'2×10 / direcție',t:null,note:'Mobilizare umăr drept',rehab:null,prio:false},
+{n:'Thoracic Rotations',s:'2×10 / parte',t:null,note:null,rehab:null,prio:false},
+]},
+{name:'Strength — Umeri (360°)',note:'Pe dreapta: reduce greutatea cu 20–30%.',noteType:'warn',items:[
+{n:'Machine Shoulder Press',s:'4×10–12',t:null,note:'Mașina preferată față de DB strict',rehab:null,prio:true},
+{n:'Lateral Raises (cable, unilateral)',s:'4×15–20 / parte',t:null,note:'Tensiune constantă — deltoid medial',rehab:null,prio:true},
+{n:'Cable Front Raise',s:'3×12 / parte',t:null,note:'Deltoid anterior',rehab:null,prio:false},
+{n:'Rear Delt Fly',s:'4×15',t:null,note:'Deltoid posterior + mid-trapez. Critical pentru postura birou',rehab:null,prio:true},
+{n:'Face Pull',s:'4×20',t:null,note:'Cel mai important exercițiu preventiv pentru umărul drept',rehab:'umăr',prio:true},
+]},
+{name:'Biceps + Triceps',note:null,items:[
+{n:'EZ Bar Curl',s:'3×12',t:null,note:null,rehab:null,prio:true},
+{n:'Skull Crusher (EZ, mediu)',s:'3×12',t:null,note:'Nu duce coatele înapoi — stres cervical',rehab:null,prio:false},
+{n:'Concentration Curl',s:'3×12 / parte',t:null,note:null,rehab:null,prio:false},
+{n:'Cable Triceps Kickback',s:'3×12 / parte',t:null,note:null,rehab:null,prio:false},
+]},
+{name:'Rehab Umăr Drept',note:null,noteType:'ok',items:[
+{n:'Face Pull',s:'3×20',t:null,note:null,rehab:'rehab',prio:true},
+{n:'Band External Rotation (lângă corp)',s:'3×15 dreapta',t:null,note:null,rehab:'rehab',prio:true},
+{n:'Sleeper Stretch dreapta',s:'3×30 sec',t:30,note:null,rehab:'rehab',prio:true},
+{n:'Cross-Body Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:'rehab',prio:false},
+{n:'Pendulum Swing',s:'2×30 sec / parte',t:30,note:'Decompresie AC. Braț liber, mișcare ușoară',rehab:'rehab',prio:false},
+]},
+{name:'Stretching Post',note:null,items:[
+{n:'Pec + Biceps Wall Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:null,prio:false},
+{n:'Neck Stretch (toate direcțiile)',s:'2×30 sec / direcție',t:30,note:'Lent, fără tracțiune',rehab:'cervicală',prio:true},
+{n:"Child's Pose",s:'2×45 sec',t:45,note:null,rehab:null,prio:true},
+]},
+],
+evening:[
+{name:'Decompresie Cervicală',note:'Vineri — cervicala cea mai tensionată.',noteType:'warn',items:[
+{n:'Chin Tucks',s:'3×10 × 5 sec',t:5,note:null,rehab:'cervicală',prio:true},
+{n:'Cervical Lateral Flexion',s:'3×30 sec / parte',t:30,note:null,rehab:'cervicală',prio:true},
+{n:'Thread the Needle',s:'3×30 sec / parte',t:30,note:null,rehab:null,prio:true},
+{n:'Thoracic Extension (foam roller)',s:'2×10',t:null,note:null,rehab:null,prio:false},
+]},
+{name:'Corp Complet',note:null,items:[
+{n:'Supine Twist',s:'2×45 sec / parte',t:45,note:null,rehab:null,prio:true},
+{n:'Hip Flexor Stretch',s:'2×40 sec / parte',t:40,note:null,rehab:null,prio:true},
+{n:'Figure 4 Stretch',s:'2×40 sec / parte',t:40,note:null,rehab:null,prio:false},
+{n:'Legs Up the Wall',s:'5 min',t:300,note:null,rehab:null,prio:true},
+{n:'Body Scan Relaxation',s:'5 min',t:300,note:'Final de săptămână. Pregătire recuperare',rehab:null,prio:false},
+]},
+],
+},
+{id:'sam',label:'SÂM',title:'Cardio Zone 2 + Mobility',meta:'Sâmbătă',tag:'tag-cardio',tagLabel:'Cardio',focus:'Fat loss · Recuperare activă · Mobilitate completă',
+morning:[
+{name:'Cardio Zone 2',note:'FC 60–70% din max. Poți vorbi. Optim fat loss + recuperare.',noteType:'ok',items:[
+{n:'Bike Zone 2',s:'40–50 min · FC 120–135 bpm',t:2700,note:'Cel mai sigur cardio pentru genunchi, coloană și bazin',rehab:null,prio:true},
+]},
+{name:'Full Body Mobility',note:'Consolidează câștigurile de mobilitate din săptămână.',noteType:'ok',items:[
+{n:"World's Greatest Stretch",s:'3×5 / parte — 5 sec',t:5,note:'Toracică + hip flexor + rotație',rehab:null,prio:true},
+{n:'90/90 Hip Stretch',s:'3×40 sec / parte',t:40,note:'Coxofemurală bilaterală — sacro-iliac',rehab:'șolduri',prio:true},
+{n:'Couch Stretch',s:'3×40 sec / parte',t:40,note:'Quad + flexor șold',rehab:null,prio:true},
+{n:'Pigeon Pose (modificat)',s:'2×45 sec / parte',t:45,note:null,rehab:null,prio:false},
+{n:'Thread the Needle',s:'3×35 sec / parte',t:35,note:'Rotație toracală',rehab:null,prio:true},
+{n:'Thoracic Extensions',s:'2×10',t:null,note:null,rehab:null,prio:false},
+{n:'Hamstring Flossing',s:'2×15 / parte',t:null,note:null,rehab:null,prio:false},
+{n:'Calf Stretch',s:'2×30 sec / parte',t:30,note:null,rehab:null,prio:false},
+]},
+{name:'Rehab Light — Coloană',note:null,noteType:'ok',items:[
+{n:'Bird Dog',s:'2×10 / parte',t:null,note:null,rehab:'coloană',prio:true},
+{n:'Dead Bug',s:'2×8 / parte',t:null,note:null,rehab:'coloană',prio:false},
+{n:'McGill Curl-Up',s:'2×8 / parte',t:null,note:null,rehab:'coloană',prio:false},
+{n:"Child's Pose",s:'3×45 sec',t:45,note:null,rehab:null,prio:true},
+]},
+{name:'Rehab Light — Genunchi',note:null,noteType:'ok',items:[
+{n:'TKE Band',s:'2×20 / parte',t:null,note:null,rehab:'genunchi',prio:true},
+{n:'Spanish Squat Hold',s:'2×30 sec',t:30,note:null,rehab:'genunchi',prio:true},
+{n:'Single Leg Balance',s:'2×30 sec / parte',t:30,note:null,rehab:'genunchi',prio:false},
+]},
+],
+evening:[
+{name:'Recuperare Pasivă',note:'Pregătire pentru săptămâna următoare.',noteType:'info',items:[
+{n:'Legs Up the Wall',s:'8–10 min',t:600,note:'Drenaj maxim după săptămână activă',rehab:null,prio:true},
+{n:'Supine Twist',s:'3×45 sec / parte',t:45,note:null,rehab:null,prio:true},
+{n:'Respirație 4-7-8',s:'5 min',t:300,note:'Nervul vag — recuperare SNC profundă',rehab:null,prio:false},
+]},
+],
+},
+{id:'dum',label:'DUM',title:'Active Recovery',meta:'Duminică',tag:'tag-recovery',tagLabel:'Recovery',focus:'Recuperare activă · Fără sarcini · Pregătire săptămână nouă',
+morning:[
+{name:'Mers + Mișcare Ușoară',note:'Nu sală. Activitate ușoară în aer liber.',noteType:'info',items:[
+{n:'Mers lejer',s:'30–45 min — conversațional',t:2400,note:'Impact redus pentru genunchi. Teren plat',rehab:null,prio:true},
+]},
+{name:'Full Body Mobility (opțional)',note:null,items:[
+{n:'Cat/Cow',s:'2×10',t:null,note:null,rehab:null,prio:true},
+{n:'Hip Flexor Stretch',s:'2×40 sec / parte',t:40,note:null,rehab:null,prio:true},
+{n:'Piriformis Stretch',s:'2×40 sec / parte',t:40,note:null,rehab:null,prio:true},
+{n:"Child's Pose",s:'2×45 sec',t:45,note:null,rehab:null,prio:true},
+{n:'Neck Stretch',s:'2×30 sec / direcție',t:30,note:null,rehab:null,prio:false},
+]},
+],
+evening:[
+{name:'Pregătire Săptămână Nouă',note:'Cel mai important: dormi 8h. Adaptările musculare se întâmplă în somn.',noteType:'ok',items:[
+{n:'Body Scan Relaxation',s:'10 min',t:600,note:'Scanează fiecare grup, relaxează conștient',rehab:null,prio:false},
+{n:'Respirație diafragmatică 4-4-4-4',s:'3–5 min',t:300,note:null,rehab:null,prio:true},
+{n:'Legs Up the Wall',s:'5 min',t:300,note:null,rehab:null,prio:true},
+]},
+],
+},
+];
+
+let state={activeDay:0,session:'morning',checked:{},completed:{},collapsed:{},notes:{}};
+function loadState(){try{const s=localStorage.getItem('progV5');if(s)state=JSON.parse(s);}catch(e){}}
+function saveState(){try{localStorage.setItem('progV5',JSON.stringify(state));}catch(e){}}
+function setSession(s){
+  state.session=s;saveState();
+  document.getElementById('btnMorning').classList.toggle('active',s==='morning');
+  document.getElementById('btnEvening').classList.toggle('active',s==='evening');
+  document.getElementById('btnEvening').classList.toggle('evening',s==='evening');
+  renderDay();
+}
+const CIRC=2*Math.PI*86;
+let tInterval=null,tTotal=30,tRemain=30,tRunning=false;
+function formatTime(s){if(s<60)return String(s);const m=Math.floor(s/60),sc=s%60;return m+':'+(sc<10?'0':'')+sc;}
+function openTimer(name,sec){
+  clearInterval(tInterval);tRunning=false;tTotal=sec;tRemain=sec;
+  document.getElementById('timerExName').textContent=name;
+  document.getElementById('timerMainBtn').textContent='▶ Start';
+  document.getElementById('adjLabel').textContent=formatTime(sec);
+  updateTimerUI();
+  document.getElementById('timerOverlay').classList.remove('hidden','done-flash');
+}
+function closeTimer(){clearInterval(tInterval);tRunning=false;document.getElementById('timerOverlay').classList.add('hidden');}
+function toggleTimer(){
+  initAudio();
+  if(tRunning){clearInterval(tInterval);tRunning=false;document.getElementById('timerMainBtn').textContent='▶ Continuă';}
+  else{
+    if(tRemain<=0){tRemain=tTotal;updateTimerUI();}
+    tRunning=true;document.getElementById('timerMainBtn').textContent='❙❙ Pauză';
+    tInterval=setInterval(tick,1000);
+  }
+}
+function tick(){tRemain--;updateTimerUI();if(tRemain<=0){clearInterval(tInterval);tRunning=false;document.getElementById('timerMainBtn').textContent='↺ Restart';onDone();}}
+// AudioContext creat la prima interacțiune — Safari necesită asta
+let audioCtx=null;
+function initAudio(){
+  if(!audioCtx){
+    try{ audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  }
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+}
+document.addEventListener('touchstart',initAudio,{once:false,passive:true});
+document.addEventListener('click',initAudio,{once:false,passive:true});
+
+function playBeep(freq,startDelay,duration){
+  if(!audioCtx) return;
+  try{
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value=freq;
+    o.type='sine';
+    const t=audioCtx.currentTime+startDelay;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.4,t+0.01);
+    g.gain.setValueAtTime(0.4,t+duration-0.05);
+    g.gain.linearRampToValueAtTime(0,t+duration);
+    o.start(t);
+    o.stop(t+duration);
+  }catch(e){}
+}
+
+function onDone(){
+  document.getElementById('timerOverlay').classList.add('done-flash');
+  // Resume AudioContext dacă e suspendat (Safari PWA)
+  if(audioCtx && audioCtx.state==='suspended'){
+    audioCtx.resume().then(()=>{
+      playBeep(523,0,0.15);
+      playBeep(659,0.2,0.15);
+      playBeep(784,0.4,0.3);
+    });
+  } else {
+    playBeep(523,0,0.15);
+    playBeep(659,0.2,0.15);
+    playBeep(784,0.4,0.3);
+  }
+}
+function updateTimerUI(){
+  const pct=tRemain/tTotal,arc=document.getElementById('timerArc'),cnt=document.getElementById('timerCount');
+  arc.style.strokeDasharray=CIRC;arc.style.strokeDashoffset=CIRC*(1-pct);
+  cnt.textContent=formatTime(tRemain);
+  arc.classList.remove('warning','danger');cnt.classList.remove('warning','danger');
+  if(tRemain<=5){arc.classList.add('danger');cnt.classList.add('danger');}
+  else if(tRemain<=10){arc.classList.add('warning');cnt.classList.add('warning');}
+  document.getElementById('timerSubLabel').textContent=tRemain===0?'TERMINAT ✓':(tTotal>=60?'MIN:SEC':'SECUNDE');
+}
+function adjustTimer(d){
+  if(tRunning)return;
+  const step=tTotal>=60?60:5;
+  tTotal=Math.max(5,tTotal+d*step);tRemain=tTotal;
+  document.getElementById('adjLabel').textContent=formatTime(tTotal);
+  updateTimerUI();
+}
+function toggleExercise(dayId,sess,si,ei){const k=`${dayId}_${sess}_${si}_${ei}`;state.checked[k]=!state.checked[k];saveState();renderDay();updateNav();}
+function toggleSection(dayId,sess,sName){const k=`${dayId}_${sess}_${sName}`;state.collapsed[k]=!state.collapsed[k];saveState();renderDay();}
+function toggleComplete(dayId){const k=`${dayId}_${state.session}`;state.completed[k]=!state.completed[k];saveState();renderDay();updateNav();updateWeekProgress();}
+function updateWeekProgress(){
+  const n=DAYS.slice(0,6).filter(d=>state.completed[`${d.id}_morning`]||state.completed[`${d.id}_evening`]).length;
+  const pct=Math.round(n/6*100);
+  document.getElementById('weekFill').style.width=pct+'%';
+  document.getElementById('weekStatLeft').textContent=`${n} / 6 zile active`;
+  document.getElementById('weekStatRight').textContent=pct+'%';
+}
+function getDayProgress(){
+  const day=DAYS[state.activeDay],sess=state.session;
+  const sections=sess==='morning'?day.morning:day.evening;
+  let t=0,d=0;
+  sections.forEach((s,si)=>s.items.forEach((_,ei)=>{t++;if(state.checked[`${day.id}_${sess}_${si}_${ei}`])d++;}));
+  return{total:t,done:d};
+}
+function renderNav(){
+  document.getElementById('dayNav').innerHTML=DAYS.map((d,i)=>`
+    <div class="day-pill ${i===state.activeDay?'active':''} ${(state.completed[`${d.id}_morning`]||state.completed[`${d.id}_evening`])?'done':''}" onclick="selectDay(${i})">
+      <span class="pill-abbr">${d.label}</span><span class="pill-dot"></span>
+    </div>`).join('');
+}
+function updateNav(){
+  document.querySelectorAll('.day-pill').forEach((p,i)=>{
+    p.className=`day-pill ${i===state.activeDay?'active':''} ${(state.completed[`${DAYS[i].id}_morning`]||state.completed[`${DAYS[i].id}_evening`])?'done':''}`;
+  });
+}
+function selectDay(i){state.activeDay=i;saveState();renderNav();renderDay();}
+function renderDay(){
+  const day=DAYS[state.activeDay],sess=state.session;
+  const sections=sess==='morning'?day.morning:day.evening;
+  const{total,done}=getDayProgress();
+  const cKey=`${day.id}_${sess}`,isComplete=state.completed[cKey];
+  const sectionsHtml=sections.map((s,si)=>{
+    const secKey=`${day.id}_${sess}_${s.name}`,isCollapsed=state.collapsed[secKey];
+    const secDone=s.items.filter((_,ei)=>state.checked[`${day.id}_${sess}_${si}_${ei}`]).length;
+    const secTotal=s.items.length,fillPct=secTotal>0?Math.round(secDone/secTotal*100):0;
+    let noteHtml='';
+    if(s.note){const nc=s.noteType==='warn'?'snote-warn':s.noteType==='ok'?'snote-ok':'snote-info';noteHtml=`<div class="snote ${nc}">${s.note}</div>`;}
+    const itemsHtml=s.items.map((ex,ei)=>{
+      const checked=state.checked[`${day.id}_${sess}_${si}_${ei}`];
+      const nSafe=ex.n.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const timerBtn=ex.t?`<div class="timer-btn" onclick="event.stopPropagation();openTimer('${nSafe}',${ex.t})">⏱</div>`:'';
+      const noteRow=ex.note?`<div class="ex-note">→ ${ex.note}</div>`:'';
+      const rehabRow=ex.rehab?`<div class="ex-rehab">● ${ex.rehab}</div>`:'';
+      return `<div class="exercise ${checked?'done':''}${ex.prio?' prio':''}">
+        <div class="ex-check-wrap" onclick="toggleExercise('${day.id}','${sess}',${si},${ei})"><div class="ex-check"></div></div>
+        <div class="ex-info" onclick="toggleExercise('${day.id}','${sess}',${si},${ei})">
+          <div class="ex-name">${ex.n}</div>
+          <div class="ex-sets">${ex.s}</div>
+          ${noteRow}${rehabRow}
+        </div>${timerBtn}</div>`;
+    }).join('');
+    const sNameSafe=s.name.replace(/'/g,"\\'");
+    return `<div class="section ${isCollapsed?'collapsed':''}">
+      <div class="section-header" onclick="toggleSection('${day.id}','${sess}','${sNameSafe}')">
+        <span class="section-title">${s.name}</span>
+        <span class="section-count">${secDone}/${secTotal}<span class="progress-mini"><span class="progress-mini-fill" style="width:${fillPct}%"></span></span><span class="chevron">▾</span></span>
+      </div>
+      <div class="section-body">${noteHtml}${itemsHtml}</div></div>`;
+  }).join('');
+  const sessIcon=sess==='morning'?'☀':'🌙',sessTxt=sess==='morning'?'Dimineață — Sală':'Seară — Acasă';
+  const notesVal=(state.notes[cKey]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  document.getElementById('dayContent').innerHTML=`
+    <div class="day-card">
+      <div class="day-card-header">
+        <div>
+          <div class="day-card-title">${day.title}</div>
+          <div class="day-card-meta">${day.meta} · ${sessIcon} ${sessTxt} · ${done}/${total}</div>
+          <div class="day-focus">${day.focus}</div>
+        </div>
+        <span class="day-tag ${day.tag}">${day.tagLabel}</span>
+      </div>${sectionsHtml}
+    </div>
+    <button class="complete-btn ${isComplete?'completed':'default'}" onclick="toggleComplete('${day.id}')">
+      ${isComplete?`✓ ${sessTxt} Completată`:`Marchează ${sessTxt}`}
+    </button>
+    <textarea class="notes-area" placeholder="Note — greutăți, cum te-ai simțit, dureri..." oninput="saveNote('${cKey}',this.value)">${notesVal}</textarea>`;
+}
+function saveNote(k,v){state.notes[k]=v;saveState();}
+loadState();renderNav();renderDay();updateWeekProgress();
+document.getElementById('timerArc').style.strokeDasharray=CIRC;
+document.getElementById('timerArc').style.strokeDashoffset=0;
+document.getElementById('btnMorning').classList.toggle('active',state.session==='morning');
+document.getElementById('btnEvening').classList.toggle('active',state.session==='evening');
+document.getElementById('btnEvening').classList.toggle('evening',state.session==='evening');
+</script>
+</body>
+</html>
