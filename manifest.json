@@ -1,0 +1,10 @@
+{
+  "name": "Program Antrenament",
+  "short_name": "Antrenament",
+  "start_url": "/Antrenament-/index.html",
+  "display": "standalone",
+  "background_color": "#0d0f14",
+  "theme_color": "#c8f04d",
+  "orientation": "portrait",
+  "icons": [{"src": "icon.png","sizes": "192x192","type": "image/png"}]
+}
